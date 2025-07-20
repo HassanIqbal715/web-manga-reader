@@ -3,20 +3,23 @@ const axios = require('axios');
 const path = require("path");
 const app = express();
 const session = require('express-session');
+const MemoryStore = require('memorystore')(session);
 require('dotenv').config();
 const hostname = 'localhost';
-const port = 5000;
+const port = process.env.PORT || 4000;
 var refresh_token;
 var access_token;
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false
-  })
+app.use(session({
+        cookie: { maxAge: 86400000 },
+        store: new MemoryStore({
+            checkPeriod: 86400000 // prune expired entries every 24h
+        }),
+        resave: false,
+        secret: process.env.SESSION_SECRET
+    })
 );
 
 async function handleAuthentication() {
@@ -175,6 +178,6 @@ app.get('/loader.html', (req, res) => {
 
 handleAuthentication();
 
-app.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
+app.listen(port, () => {
+    console.log(`Server running at port: ${port}`);
 });
