@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Manga Reader</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script>
+        fetch('/header.html')
+            .then(res => res.text())
+            .then(async data => {
+                document.querySelector('#header').innerHTML = data;
+                import('/script/header.js');
+            });
+    </script>
 </head>
 <body>
-    
+    <div id="header"></div>
 </body>
 </html>
