@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mutsu</title>
+    <link rel="stylesheet" href="/css/chapter.css">
     <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/search.css">
-    <link rel="stylesheet" href="/css/mangaItem.css"> 
+    <script type="module" src="/script/chapter.js" defer></script>
     <script>
         fetch('/header.html')
             .then(res => res.text())
@@ -20,14 +20,15 @@
                 document.querySelector('#loader').innerHTML = data;
             });
     </script>
-    <script type='module' src='/script/search.js' defer></script>
 </head>
 <body>
     <div id="loader"></div>
     <div id="header"></div>
-    <div id="search-nav-bar-top" class="search-nav-bar"></div>
-    <div id="search-result-text">No Results Found.</div>
-    <div id="search-result"></div>
-    <div id="search-nav-bar-bottom" class="search-nav-bar"></div>
+    <div id="chapter-page">Chapter Not Found.</div>
+    <div id="box-container">
+        <div id="left-box"></div>
+        <div id="right-box"></div>
+    </div>
+    <div id="page-number"></div>
 </body>
 </html>

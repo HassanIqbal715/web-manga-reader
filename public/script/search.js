@@ -1,7 +1,9 @@
 import { getCoverByID, searchMangaByTitle } from "./queries.js";
 import { createItem } from "./mangaItem.js";
+import { getCoverFilenameByManga, hideLoader } from "./utils.js";
 
 const grid = document.querySelector("#search-result");
+const searchResultText = document.querySelector("#search-result-text");
 const searchNavBarTop = document.querySelector("#search-nav-bar-top");
 const searchNavBarBot = document.querySelector("#search-nav-bar-bottom");
 
@@ -11,33 +13,32 @@ currentPage = parseInt(currentPage) - 1;
 let mangaData;
 
 async function createMangas() {
-    if (searchTerm) {
-        if (currentPage + 1 <= 0) {
-            document.querySelector("#loader").style.display = 'none';
-            document.querySelector("#loader-text").style.display = 'none';
-            document.body.style.overflow = 'auto';
-            return; 
-        }
-        mangaData = await searchMangaByTitle(searchTerm, currentPage);
+    if (!searchTerm || currentPage + 1 <= 0) {
+        hideLoader();
+        return;
     }
-    if (mangaData.data) {
-        const total = mangaData.total;
-        for (let x of mangaData.data) {
-            const relations = x.relationships;
-            const coverRel = relations.find(rel => rel.type === 'cover_art');
-            const cover = await getCoverByID(coverRel['id']);
-            const fileName = cover.data.attributes['fileName'];
-            createItem(grid, x.attributes.title['en'], x.id, fileName);
-        }
-        createPagesButtons(total);
-        document.querySelector("#loader").style.display = 'none';
-        document.querySelector("#loader-text").style.display = 'none';
-        document.body.style.overflow = 'auto';
+
+    mangaData = await searchMangaByTitle(searchTerm, currentPage);
+
+    if (!mangaData.data || mangaData.data.length == 0) {
+        hideLoader();
+        return;
     }
+
+    searchResultText.innerHTML = '';
+    const total = mangaData.total;
+
+    for (let x of mangaData.data) {
+        const fileName = await getCoverFilenameByManga(x);
+        createItem(grid, x.attributes.title['en'], x.id, fileName);
+    }
+
+    createPagesButtons(total);
+    hideLoader();
 }
 
 function createPagesButtons(total) {
-    let n = Math.ceil(total/24);
+    let n = Math.ceil(total/30);
     if (currentPage + 1 > n || currentPage + 1 < 1) {
         return;
     }
@@ -58,28 +59,24 @@ function createPagesButtons(total) {
         createPageButton(n);
 }
 
-function clickSearchNavButton(pageNumber) {
-    window.location.href = 
-        `/search?name=${encodeURIComponent(searchTerm)}&page=${pageNumber}`;
-}
-
 function createPageButton(pageNumber) {
+    let a = document.createElement("a");
     let btn = document.createElement("button");
     btn.textContent = pageNumber;
     btn.classList.add("search-nav-button");
     if (pageNumber - 1 == currentPage) {
-        btn.setAttribute("style", "background-color: rgba(255, 255, 255, 0.08);");
+        btn.setAttribute(
+            "style", "background-color: rgba(255, 255, 255, 0.08);"
+        );
     }
-    const clone = btn.cloneNode(true);
-    btn.addEventListener("click", () => {
-        clickSearchNavButton(pageNumber);
-    });
+    a.href = `
+        /search?name=${encodeURIComponent(searchTerm)}&page=${pageNumber}
+    `;
+    a.appendChild(btn);
+    
+    const clone = a.cloneNode(true);
 
-    clone.addEventListener("click", () => {
-        clickSearchNavButton(pageNumber);
-    });
-
-    searchNavBarTop.appendChild(btn);
+    searchNavBarTop.appendChild(a);
     searchNavBarBot.appendChild(clone);
 }
 

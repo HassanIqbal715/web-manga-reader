@@ -5,7 +5,6 @@ const app = express();
 const session = require('express-session');
 const MemoryStore = require('memorystore')(session);
 require('dotenv').config();
-const hostname = 'localhost';
 const port = process.env.PORT || 4000;
 var refresh_token;
 var access_token;
@@ -15,7 +14,7 @@ app.use(express.json());
 app.use(session({
         cookie: { maxAge: 86400000 },
         store: new MemoryStore({
-            checkPeriod: 86400000 // prune expired entries every 24h
+            checkPeriod: 86400000
         }),
         resave: false,
         secret: process.env.SESSION_SECRET
@@ -31,7 +30,7 @@ async function handleAuthentication() {
         } catch (err) {
             console.error('Token refresh failed:', err.message);
         }
-    }, 15 * 60 * 1000);
+    }, 14.9 * 60 * 1000);
 }
 
 async function authenticateToken() {
@@ -100,8 +99,8 @@ app.get('/api/mangas/:title', async (req, res) => {
             url: `${baseURL}/manga`,
             params: {
                 title: req.params.title,
-                limit: 24,
-                offset: parseInt(req.query.page) * 24
+                limit: 30,
+                offset: parseInt(req.query.page) * 30
             }
         });
         res.json(response.data);
@@ -136,7 +135,30 @@ app.get('/api/manga/:mangaID/feed', async (req, res) => {
                 translatedLanguage: ['en'],
                 order: {
                     chapter: 'asc'
-                }
+                },
+                offset: req.params.offset
+            }
+        });
+        res.json(response.data);
+    }
+    catch(err) {
+        res.status(500).json({ error: 'Chapter search failed', details: err.message });
+    }
+});
+
+app.get('/api/manga/:mangaID/feed/:offset', async (req, res) => {
+    const baseURL = 'https://api.mangadex.org';
+    const languages = ['en'];
+    try {
+        const response = await axios({
+            method: 'GET',
+            url: `${baseURL}/manga/${req.params.mangaID}/feed`,
+            params: {
+                translatedLanguage: ['en'],
+                order: {
+                    chapter: 'asc'
+                },
+                offset: req.params.offset
             }
         });
         res.json(response.data);
@@ -160,12 +182,48 @@ app.get('/api/manga/cover/:coverID', async (req, res) => {
     }
 });
 
+app.get('/api/manga/cover/:coverID', async (req, res) => {
+    const baseURL = 'https://api.mangadex.org';
+    try {
+        const response = await axios({
+            method: 'GET',
+            url: `${baseURL}/cover/${req.params.coverID}`,
+        });
+        res.json(response.data);
+    }
+    catch(err) {
+        res.status(500).json({ error: 'Cover search failed', details: err.message });
+    }
+});
+
+app.get('/api/chapter/:chapterID', async (req, res) => {
+    const baseURL = 'https://api.mangadex.org';
+    try {
+        const response = await axios({
+            method: 'GET',
+            url: `${baseURL}/at-home/server/${req.params.chapterID}`,
+        });
+        res.json(response.data);
+    }
+    catch(err) {
+        res.status(500).json({ error: 'Chapter search failed', details: err.message });
+    }
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
 app.get('/search', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'search.html'));
+});
+
+app.get('/manga/:mangaID', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'manga.html'));
+});
+
+app.get('/manga/:mangaID/chapter/:chapterID', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'chapter.html'));
 });
 
 app.get('/header.html', (req, res) => {
